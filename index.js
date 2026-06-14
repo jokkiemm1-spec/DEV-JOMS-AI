@@ -1,62 +1,53 @@
-const { default: makeWASocket, DisconnectReason, useMultiFileAuthState, Browsers } = require('@whiskeysockets/baileys')
-const qrcode = require('qrcode-terminal')
-const axios = require('axios')
-const pino = require('pino')
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys')
+const { Boom } = require('@hapi/boom')
 
 async function startBot() {
-    const { state, saveCreds } = await useMultiFileAuthState('auth_info')
+    const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys')
+
     const sock = makeWASocket({
-        logger: pino({ level: 'silent' }),
         auth: state,
-        browser: Browsers.macOS('Desktop'),
-        printQRInTerminal: true
+        printQRInTerminal: false, // No more QR stress
+        browser: ['Dev Joms AI Bot', 'Chrome', '1.0.0']
     })
 
-    sock.ev.on('creds.update', saveCreds)
-    sock.ev.on('connection.update', ({ connection, lastDisconnect, qr }) => {
-        if (qr) {
-            console.log('=== SCAN THIS QR CODE ===')
-            qrcode.generate(qr, { small: true })
-        }
-        if (connection === 'close') {
-            const shouldReconnect = lastDisconnect.error?.output?.statusCode!== DisconnectReason.loggedOut
-            if (shouldReconnect) startBot()
-        } else if (connection === 'open') {
+    // PAIRING CODE FOR YOUR NUMBER
+    if (!sock.authState.creds.registered) {
+        const phoneNumber = '2349036106257' // Your number
+        setTimeout(async () => {
+            const code = await sock.requestPairingCode(phoneNumber)
+            console.log(`\n\n=== PAIRING CODE FOR DEV JOMS AI BOT ===`)
+            console.log(`CODE: ${code}`)
+            console.log(`Enter this in WhatsApp > Linked devices > Link with phone number`)
+            console.log(`========================================\n\n`)
+        }, 3000)
+    }
+
+    sock.ev.on('connection.update', (update) => {
+        const { connection, lastDisconnect } = update
+        if(connection === 'close') {
+            const shouldReconnect = (lastDisconnect.error)?.output?.statusCode!== DisconnectReason.loggedOut
+            console.log('Connection closed, reconnecting:', shouldReconnect)
+            if(shouldReconnect) startBot()
+        } else if(connection === 'open') {
             console.log('✅ DEV JOMS AI BOT CONNECTED!')
         }
     })
 
-    sock.ev.on('messages.upsert', async ({ messages }) => {
-        const m = messages[0]
-        if (!m.message || m.key.fromMe) return
-        const text = m.message.conversation || m.message.extendedTextMessage?.text || ''
-        const sender = m.key.remoteJid
-        if (!text.startsWith('.')) return
-        const command = text.slice(1).split(' ')[0].toLowerCase()
+    sock.ev.on('creds.update', saveCreds)
 
-        if (command === 'ping') {
-            await sock.sendMessage(sender, { text: 'Dev Joms AI Bot dey live ⚡ No dull am!' })
+    // Your bot commands here
+    sock.ev.on('messages.upsert', async ({ messages }) => {
+        const msg = messages[0]
+        if (!msg.message || msg.key.fromMe) return
+
+        const text = msg.message.conversation || msg.message.extendedTextMessage?.text || ''
+
+        if (text === '.ping') {
+            await sock.sendMessage(msg.key.remoteJid, { text: 'Dev Joms AI Bot dey live ⚡ No dull am!' })
         }
 
-        if (command === 'roast') {
-            try {
-                await sock.sendMessage(sender, { text: 'Dev Joms AI dey cook am... 🔥' })
-                let mentioned = m.message.extendedTextMessage?.contextInfo?.mentionedJid || []
-                let who = mentioned[0] || (m.key.participant || sender)
-                let name = who.split('@')[0]
-                if (who === (m.key.participant || sender)) name = "you"
-
-                const { data } = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-                    model: 'llama-3.1-8b-instant',
-                    messages: [{ role: 'user', content: `Roast ${name} in Nigerian pidgin. 1-2 sentences, savage, funny, no curse words.` }],
-                    max_tokens: 60
-                }, {
-                    headers: { 'Authorization': 'Bearer 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' }
-                })
-                await sock.sendMessage(sender, { text: data.choices[0].message.content })
-            } catch (e) {
-                await sock.sendMessage(sender, { text: 'Roast machine hang. Try again' })
-            }
+        if (text.startsWith('.roast')) {
+            await sock.sendMessage(msg.key.remoteJid, { text: 'Your face be like free WiFi - everybody don connect before 😂' })
         }
     })
 }
