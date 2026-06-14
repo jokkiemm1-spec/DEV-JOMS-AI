@@ -1,3 +1,13 @@
+const fs = require('fs')
+const path = require('path')
+
+// DELETE OLD SESSION - Force fresh QR
+const authFolder = 'auth_info_baileys'
+if (fs.existsSync(authFolder)) {
+    fs.rmSync(authFolder, { recursive: true, force: true })
+    console.log('Deleted old session - Generating fresh QR')
+}
+
 const express = require('express')
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, Browsers } = require('@whiskeysockets/baileys')
 const { Boom } = require('@hapi/boom')
