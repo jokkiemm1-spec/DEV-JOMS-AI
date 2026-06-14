@@ -51,7 +51,7 @@ async function startBot() {
                     messages: [{ role: 'user', content: `Roast ${name} in Nigerian pidgin. 1-2 sentences, savage, funny, no curse words.` }],
                     max_tokens: 60
                 }, {
-                    headers: { 'Authorization': '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' }
+                    headers: { 'Authorization': 'Bearer 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' }
                 })
                 await sock.sendMessage(sender, { text: data.choices[0].message.content })
             } catch (e) {
