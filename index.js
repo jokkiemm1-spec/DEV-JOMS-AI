@@ -22,7 +22,7 @@ async function startBot() {
             const shouldReconnect = lastDisconnect.error?.output?.statusCode!== DisconnectReason.loggedOut
             if (shouldReconnect) startBot()
         } else if (connection === 'open') {
-            console.log('✅ CODY BOT CONNECTED!')
+            console.log('✅ DEV JOMS AI BOT CONNECTED!')
         }
     })
 
@@ -35,12 +35,12 @@ async function startBot() {
         const command = text.slice(1).split(' ')[0].toLowerCase()
 
         if (command === 'ping') {
-            await sock.sendMessage(sender, { text: 'Cody bot dey live ⚡' })
+            await sock.sendMessage(sender, { text: 'Dev Joms AI Bot dey live ⚡ No dull am!' })
         }
 
         if (command === 'roast') {
             try {
-                await sock.sendMessage(sender, { text: 'Wait make I cook am...' })
+                await sock.sendMessage(sender, { text: 'Dev Joms AI dey cook am... 🔥' })
                 let mentioned = m.message.extendedTextMessage?.contextInfo?.mentionedJid || []
                 let who = mentioned[0] || (m.key.participant || sender)
                 let name = who.split('@')[0]
@@ -51,11 +51,11 @@ async function startBot() {
                     messages: [{ role: 'user', content: `Roast ${name} in Nigerian pidgin. 1-2 sentences, savage, funny, no curse words.` }],
                     max_tokens: 60
                 }, {
-                    headers: { 'Authorization': 'Bearer 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' }
+                    headers: { 'Authorization': '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' }
                 })
                 await sock.sendMessage(sender, { text: data.choices[0].message.content })
             } catch (e) {
-                await sock.sendMessage(sender, { text: 'Roast machine hang' })
+                await sock.sendMessage(sender, { text: 'Roast machine hang. Try again' })
             }
         }
     })
